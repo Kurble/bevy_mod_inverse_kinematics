@@ -1,0 +1,11 @@
+[package]
+name = "bevy_mod_inverse_kinematics"
+version = "0.1.0"
+edition = "2021"
+categories = ["game-engines", "graphics", "rendering"]
+description = "An inverse kinematics plugin for the bevy game engine"
+keywords = [gamedev", "graphics", "bevy", "animation"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+bevy = "0.8.1"
