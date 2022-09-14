@@ -1,9 +1,8 @@
-use std::num::NonZeroUsize;
 use std::ops::Range;
 
 use bevy::ecs::query::QueryEntityError;
-use bevy::transform::TransformSystem;
 use bevy::prelude::*;
+use bevy::transform::TransformSystem;
 
 pub struct InverseKinematicsPlugin;
 
@@ -12,7 +11,7 @@ pub struct InverseKinematicsPlugin;
 #[derive(Component)]
 pub struct IkConstraint {
     /// How many bones are included in the IK constraint.
-    pub chain_length: NonZeroUsize,
+    pub chain_length: usize,
     /// Maximum number of iterations to solve this constraint.
     pub iterations: usize,
     /// Target entity. The target must have a `Transform` and `GlobalTransform`.
@@ -40,14 +39,12 @@ pub struct RotationConstraint {
 }
 
 pub fn inverse_kinematics_solver_system(
-    constraints_ik: Query<(Entity, &IkConstraint)>,
-    mut params: ParamSet<(
-        Query<&GlobalTransform>,
-        Query<(&mut Transform, &mut GlobalTransform, &Parent)>,
-    )>,
+    query: Query<(Entity, &IkConstraint)>,
+    parents: Query<&Parent>,
+    mut transforms: Query<(&mut Transform, &mut GlobalTransform)>,
 ) {
-    for (entity, constraint) in constraints_ik.iter() {
-        if let Err(e) = constraint.solve(entity, &mut params) {
+    for (entity, constraint) in query.iter() {
+        if let Err(e) = constraint.solve(entity, &parents, &mut transforms) {
             bevy::log::warn!("Failed to solve IK constraint: {e}");
         }
     }
@@ -57,61 +54,64 @@ impl IkConstraint {
     fn solve(
         &self,
         entity: Entity,
-        params: &mut ParamSet<(
-            Query<&GlobalTransform>,
-            Query<(&mut Transform, &mut GlobalTransform, &Parent)>,
-        )>,
+        parents: &Query<&Parent>,
+        transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
     ) -> Result<(), QueryEntityError> {
-        let (bone, parent) = params.p1()
-            .get(entity)
-            .map(|(t, _, p)| (t.translation, p.get()))?;
-        let tail = params.p0().get(self.target).map(GlobalTransform::translation)?;
-        let pole = if let Some(entity) = self.pole_target {
-            Some(params.p0().get(entity).map(GlobalTransform::translation)?)
-        } else {
-            None
-        };
-        Self::solve_recursive(parent, bone, tail, pole, &mut params.p1(), self.chain_length.get())?;
-        Ok(())
+        if self.chain_length == 0 {
+            return Ok(());
+        }
+
+        let mut joints = Vec::with_capacity(self.chain_length + 2);
+        joints.push(entity);
+        for i in 0..self.chain_length + 1 {
+            joints.push(parents.get(joints[i])?.get());
+        }
+
+        let start = transforms
+            .get(joints[self.chain_length - 1])?
+            .1
+            .translation();
+        let end = transforms.get(self.target)?.1.translation();
+
+        let target = end;
+        let normal = transforms.get(joints[0])?.0.translation;
+        let pole_target = None;
+
+        Self::solve_recursive(&joints[1..], normal, target, pole_target, transforms).map(drop)
     }
 
     fn solve_recursive(
-        // the entity to rotate
-        entity: Entity,
-        // the translation vector of this bone
-        bone: Vec3,
-        // the desired tail of this bone
-        tail: Vec3,
-        // the desired up vector of this bone
-        pole: Option<Vec3>,
-        query: &mut Query<(&mut Transform, &mut GlobalTransform, &Parent)>,
-        chain: usize,
+        chain: &[Entity],
+        normal: Vec3,
+        target: Vec3,
+        pole_target: Option<Vec3>,
+        transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
     ) -> Result<GlobalTransform, QueryEntityError> {
-        if chain == 0 {
-            let (_, &global_transform, _) = query.get(entity)?;
+        if chain.len() == 1 {
+            let (_, &global_transform) = transforms.get(chain[0])?;
             return Ok(global_transform);
         }
 
-        let (transform, global_transform, parent) =
-            query.get(entity).map(|(&t, &g, p)| (t, g, p.get()))?;
-        // the bone vector of the parent is the translation of this bone
-        let parent_bone = transform.translation;
+        let (&transform, &global_transform) = transforms.get(chain[0])?;
+        let parent_normal = transform.translation;
 
-        // calculate absolute rotation in order to point this bone at the desired tail
+        // determine absolute rotation and translation for this bone where the tail touches the 
+        // target.
         let rotation = Quat::from_rotation_arc(
-            bone.normalize(),
-            (tail - global_transform.translation()).normalize(),
+            normal.normalize(),
+            // todo: constrain our own position to the pole plane maybe??
+            (target - global_transform.translation()).normalize(),
         );
-        // calculate absolute translation so the tip of this bone touches the desired tail.
-        let head = tail - rotation.mul_vec3(bone);
+        let translation = target - rotation.mul_vec3(normal);
 
-        // pass the targets to the parent to obtain the final global transform of the parent
+        // recurse to target the parent towards the current translation
         let parent_global_transform =
-            Self::solve_recursive(parent, parent_bone, head, pole, query, chain - 1)?;
+            Self::solve_recursive(&chain[1..], parent_normal, translation, pole_target, transforms)?;
 
-        // determine the relative translation for this bone
-        let (mut transform, mut global_transform, _) = query.get_mut(entity).unwrap();
-        transform.rotation = Quat::from_affine3(&parent_global_transform.affine().inverse()) * rotation;
+        // apply constraints on the way back from recursing
+        let (mut transform, mut global_transform) = transforms.get_mut(chain[0]).unwrap();
+        transform.rotation =
+            Quat::from_affine3(&parent_global_transform.affine().inverse()) * rotation;
         *global_transform = parent_global_transform.mul_transform(*transform);
 
         Ok(*global_transform)
