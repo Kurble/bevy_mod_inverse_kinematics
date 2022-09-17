@@ -1,8 +1,7 @@
-use std::ops::Range;
-
 use bevy::ecs::query::QueryEntityError;
 use bevy::prelude::*;
 use bevy::transform::TransformSystem;
+use bevy_prototype_debug_lines::{DebugLinesPlugin, DebugLines};
 
 pub struct InverseKinematicsPlugin;
 
@@ -22,36 +21,21 @@ pub struct IkConstraint {
     pub pole_angle: f32,
 }
 
-#[derive(Component)]
-pub struct CopyLocationConstraint {
-    /// Target entity. The target must have a `Transform` and `GlobalTransform`.
-    pub target: Entity,
-}
-
-#[derive(Component)]
-pub struct RotationConstraint {
-    /// The allowable range for yaw rotation.
-    pub yaw: Range<f32>,
-    /// The allowable range for pitch rotation.
-    pub pitch: Range<f32>,
-    /// The allowable range for roll rotation.
-    pub roll: Range<f32>,
-}
-
-// shorter version of an affine transformation??
 struct PoleTarget {
     origin: Vec3,
     tangent: Vec3,
     normal: Vec3,
+    angle: f32,
 }
 
 pub fn inverse_kinematics_solver_system(
     query: Query<(Entity, &IkConstraint)>,
     parents: Query<&Parent>,
     mut transforms: Query<(&mut Transform, &mut GlobalTransform)>,
+    mut debug_lines: ResMut<DebugLines>,
 ) {
     for (entity, constraint) in query.iter() {
-        if let Err(e) = constraint.solve(entity, &parents, &mut transforms) {
+        if let Err(e) = constraint.solve(entity, &parents, &mut transforms, &mut debug_lines) {
             bevy::log::warn!("Failed to solve IK constraint: {e}");
         }
     }
@@ -63,6 +47,7 @@ impl IkConstraint {
         entity: Entity,
         parents: &Query<&Parent>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
+        debug_lines: &mut DebugLines,
     ) -> Result<(), QueryEntityError> {
         if self.chain_length == 0 {
             return Ok(());
@@ -78,10 +63,7 @@ impl IkConstraint {
         let normal = transforms.get(joints[0])?.0.translation;
 
         let pole_target = if let Some(pole_target) = self.pole_target {
-            let start = transforms
-                .get(joints[self.chain_length])?
-                .1
-                .translation();
+            let start = transforms.get(joints[self.chain_length])?.1.translation();
             let pole_target = transforms.get(pole_target)?.1.translation();
 
             let tangent = (target - start).normalize();
@@ -92,20 +74,27 @@ impl IkConstraint {
                 origin: start,
                 tangent,
                 normal,
+                angle: self.pole_angle,
             })
         } else {
             None
         };
 
         for _ in 0..self.iterations {
-            Self::solve_recursive(
+            let result = Self::solve_recursive(
                 &joints[1..],
                 normal,
                 target,
                 pole_target.as_ref(),
                 transforms,
+                debug_lines,
             )?;
+
+            if result.mul_vec3(normal).distance_squared(target) < 0.001 {
+                return Ok(());
+            }
         }
+
         Ok(())
     }
 
@@ -115,27 +104,46 @@ impl IkConstraint {
         target: Vec3,
         pole_target: Option<&PoleTarget>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
+        debug_lines: &mut DebugLines,
     ) -> Result<GlobalTransform, QueryEntityError> {
+        let (&transform, &global_transform) = transforms.get(chain[0])?;
         if chain.len() == 1 {
-            let (_, &global_transform) = transforms.get(chain[0])?;
             return Ok(global_transform);
         }
 
-        let (&transform, &global_transform) = transforms.get(chain[0])?;
         let parent_normal = transform.translation;
 
         // determine absolute rotation and translation for this bone where the tail touches the
         // target.
-        let mut from_position = global_transform.translation();
-        if let Some(pole_target) = pole_target {
-            let on_pole = pole_target.origin
-                + (from_position - pole_target.origin).project_onto_normalized(pole_target.tangent);
-            let distance = from_position.distance(on_pole);
-            from_position = on_pole + pole_target.normal * distance;
-        }
-        let rotation =
-            Quat::from_rotation_arc(normal.normalize(), (target - from_position).normalize());
+        let rotation = if let Some(pt) = pole_target {
+            let on_pole = pt.origin
+                + (global_transform.translation() - pt.origin).project_onto_normalized(pt.tangent);
+            let distance = on_pole.distance(global_transform.translation());
+            let from_position = on_pole + pt.normal * distance;
+
+            let base = Quat::from_rotation_arc(
+                normal.normalize(),
+                Vec3::Z,
+            );
+
+            let forward = (target - from_position).normalize();
+            let up = forward.cross(pt.normal);
+            let right = up.cross(forward);
+            let orientation = Mat3::from_cols(right, up, forward) * Mat3::from_rotation_z(pt.angle);
+
+            (Quat::from_mat3(&orientation) * base).normalize()
+        } else {
+            Quat::from_rotation_arc(
+                normal.normalize(),
+                (target - global_transform.translation()).normalize(),
+            ).normalize()
+        };
         let translation = target - rotation.mul_vec3(normal);
+
+        debug_lines.line_colored(translation, translation+rotation.mul_vec3(Vec3::X * 0.1), 0.0, Color::RED);
+        debug_lines.line_colored(translation, translation+rotation.mul_vec3(Vec3::Y * 0.1), 0.0, Color::GREEN);
+        debug_lines.line_colored(translation, translation+rotation.mul_vec3(Vec3::Z * 0.1), 0.0, Color::BLUE);
+        debug_lines.line_colored(translation, translation+rotation.mul_vec3(normal), 0.0, Color::YELLOW);
 
         // recurse to target the parent towards the current translation
         let parent_global_transform = Self::solve_recursive(
@@ -144,23 +152,17 @@ impl IkConstraint {
             translation,
             pole_target,
             transforms,
+            debug_lines,
         )?;
 
         // apply constraints on the way back from recursing
         let (mut transform, mut global_transform) = transforms.get_mut(chain[0]).unwrap();
-        // if let Some(pole_target) = pole_target {
-        //     let angle = -rotation.mul_vec3(normal).angle_between(pole_target.x_axis);
-        //     let target = Quat::from_axis_angle(pole_target.z_axis, angle).mul_vec3(pole_target.x_axis);
-
-        //     rotation = Quat::from_rotation_arc(
-        //         normal.normalize(),
-        //         (target - global_transform.translation()).normalize(),
-        //     );
-        // }
-
         transform.rotation =
-            Quat::from_affine3(&parent_global_transform.affine().inverse()) * rotation;
+            Quat::from_affine3(&parent_global_transform.affine()).inverse().normalize() * rotation;
         *global_transform = parent_global_transform.mul_transform(*transform);
+
+        debug_lines.line_gradient(global_transform.translation(), global_transform.translation() + rotation.mul_vec3(normal), 0.0, Color::VIOLET, Color::BLACK);
+        debug_lines.line_gradient(global_transform.translation(), global_transform.mul_vec3(normal), 0.0, Color::BLACK, Color::CYAN);
 
         Ok(*global_transform)
     }
@@ -168,6 +170,8 @@ impl IkConstraint {
 
 impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugin(DebugLinesPlugin::default());
+
         app.add_system_to_stage(
             CoreStage::PostUpdate,
             inverse_kinematics_solver_system.after(TransformSystem::TransformPropagate),
