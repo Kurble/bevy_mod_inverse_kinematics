@@ -127,7 +127,7 @@ impl IkConstraint {
             );
 
             let forward = (target - from_position).normalize();
-            let up = forward.cross(pt.normal);
+            let up = forward.cross(pt.normal).normalize();
             let right = up.cross(forward);
             let orientation = Mat3::from_cols(right, up, forward) * Mat3::from_rotation_z(pt.angle);
 
@@ -172,9 +172,10 @@ impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(DebugLinesPlugin::default());
 
-        app.add_system_to_stage(
-            CoreStage::PostUpdate,
-            inverse_kinematics_solver_system.after(TransformSystem::TransformPropagate),
-        );
+        // app.add_system_to_stage(
+        //     CoreStage::PostUpdate,
+        //     inverse_kinematics_solver_system.after(TransformSystem::TransformPropagate),
+        // );
+        app.add_system(inverse_kinematics_solver_system);
     }
 }
