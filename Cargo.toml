@@ -1,9 +1,11 @@
 [package]
 name = "bevy_mod_inverse_kinematics"
 version = "0.1.0"
+authors = ["Bram Buurlage <brambuurlage@gmail.com>"]
 edition = "2021"
 categories = ["game-engines", "graphics", "rendering"]
-description = "An inverse kinematics plugin for the bevy game engine"
+description = "An inverse kinematics plugin for the Bevy engine."
+repository = "https://github.com/Kurble/bevy_mod_inverse_kinematics/"
 keywords = ["gamedev", "graphics", "bevy", "animation"]
 license = "MIT OR Apache-2.0"
 
