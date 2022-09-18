@@ -9,4 +9,7 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 bevy = "0.8.1"
-bevy_prototype_debug_lines = { version = "0.8.1", features = ["3d"] }
+bevy_prototype_debug_lines = { version = "0.8.1", features = ["3d"], optional = true }
+
+[features]
+debug_lines = ["bevy_prototype_debug_lines"]
