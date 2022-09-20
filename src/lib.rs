@@ -29,7 +29,7 @@ pub struct IkConstraint {
 impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
         #[cfg(feature = "debug_lines")]
-        app.add_plugin(DebugLinesPlugin::default());
+        app.add_plugin(bevy_prototype_debug_lines::DebugLinesPlugin::default());
         app.add_system_to_stage(
             CoreStage::PostUpdate,
             solver::inverse_kinematics_system
