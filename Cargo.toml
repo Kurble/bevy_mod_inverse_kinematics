@@ -1,6 +1,6 @@
 [package]
 name = "bevy_mod_inverse_kinematics"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Bram Buurlage <brambuurlage@gmail.com>"]
 edition = "2021"
 categories = ["game-engines", "graphics", "rendering"]
@@ -10,8 +10,8 @@ keywords = ["gamedev", "graphics", "bevy", "animation"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy = "0.8.1"
-bevy_prototype_debug_lines = { version = "0.8.1", features = ["3d"], optional = true }
+bevy = "0.9.0"
+#bevy_prototype_debug_lines = { version = "0.9.1", features = ["3d"], optional = true }
 
 [features]
-debug_lines = ["bevy_prototype_debug_lines"]
+#debug_lines = ["bevy_prototype_debug_lines"]

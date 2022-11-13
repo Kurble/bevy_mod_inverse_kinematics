@@ -6,12 +6,14 @@ pub struct ManuallyTarget(Vec4);
 
 fn main() {
     App::new()
-        .insert_resource(WindowDescriptor {
-            width: 800.0,
-            height: 600.0,
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                width: 800.0,
+                height: 600.0,
+                ..default()
+            },
             ..default()
-        })
-        .add_plugins(DefaultPlugins)
+        }))
         .add_plugin(InverseKinematicsPlugin)
         .add_startup_system(setup)
         .add_system(setup_ik)
@@ -26,9 +28,9 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands
-        .spawn_bundle(SpatialBundle::default())
+        .spawn(SpatialBundle::default())
         .with_children(|parent| {
-            parent.spawn_bundle(Camera3dBundle {
+            parent.spawn(Camera3dBundle {
                 transform: Transform::from_xyz(-0.5, 1.5, 2.5)
                     .looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
                 projection: bevy::render::camera::Projection::Perspective(PerspectiveProjection {
@@ -42,7 +44,7 @@ fn setup(
         });
 
     let size = 30.0;
-    commands.spawn_bundle(DirectionalLightBundle {
+    commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
             illuminance: 10000.0,
@@ -62,7 +64,7 @@ fn setup(
         ..default()
     });
 
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
         material: materials.add(StandardMaterial {
             base_color: Color::WHITE,
@@ -71,7 +73,7 @@ fn setup(
         ..default()
     });
 
-    commands.spawn_bundle(SceneBundle {
+    commands.spawn(SceneBundle {
         scene: assets.load("skin.gltf#Scene0"),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         ..default()
@@ -108,23 +110,25 @@ fn setup_ik(
         .unwrap();
 
         let target = commands
-            .spawn_bundle(PbrBundle {
-                transform: Transform::from_xyz(0.3, 0.8, 0.2),
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
-                    radius: 0.05,
-                    subdivisions: 1,
-                })),
-                material: materials.add(StandardMaterial {
-                    base_color: Color::RED,
+            .spawn((
+                PbrBundle {
+                    transform: Transform::from_xyz(0.3, 0.8, 0.2),
+                    mesh: meshes.add(Mesh::from(shape::Icosphere {
+                        radius: 0.05,
+                        subdivisions: 1,
+                    })),
+                    material: materials.add(StandardMaterial {
+                        base_color: Color::RED,
+                        ..default()
+                    }),
                     ..default()
-                }),
-                ..default()
-            })
-            .insert(ManuallyTarget(Vec4::new(0.0, 0.0, 1.0, 0.3)))
+                },
+                ManuallyTarget(Vec4::new(0.0, 0.0, 1.0, 0.3)),
+            ))
             .id();
 
         let pole_target = commands
-            .spawn_bundle(PbrBundle {
+            .spawn(PbrBundle {
                 transform: Transform::from_xyz(-1.0, 0.4, -0.2),
                 mesh: meshes.add(Mesh::from(shape::Icosphere {
                     radius: 0.05,

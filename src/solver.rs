@@ -1,7 +1,5 @@
 use bevy::ecs::query::QueryEntityError;
 use bevy::prelude::*;
-#[cfg(feature = "debug_lines")]
-use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 
 use super::IkConstraint;
 
@@ -16,15 +14,12 @@ pub fn inverse_kinematics_system(
     query: Query<(Entity, &IkConstraint)>,
     parents: Query<&Parent>,
     mut transforms: Query<(&mut Transform, &mut GlobalTransform)>,
-    #[cfg(feature = "debug_lines")] mut debug_lines: ResMut<DebugLines>,
 ) {
     for (entity, constraint) in query.iter() {
         if let Err(e) = constraint.solve(
             entity,
             &parents,
             &mut transforms,
-            #[cfg(feature = "debug_lines")]
-            &mut debug_lines,
         ) {
             bevy::log::warn!("Failed to solve IK constraint: {e}");
         }
@@ -37,7 +32,6 @@ impl IkConstraint {
         entity: Entity,
         parents: &Query<&Parent>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
-        #[cfg(feature = "debug_lines")] debug_lines: &mut DebugLines,
     ) -> Result<(), QueryEntityError> {
         if self.chain_length == 0 {
             return Ok(());
@@ -55,9 +49,6 @@ impl IkConstraint {
         let pole_target = if let Some(pole_target) = self.pole_target {
             let start = transforms.get(joints[self.chain_length])?.1.translation();
             let pole_target = transforms.get(pole_target)?.1.translation();
-
-            #[cfg(feature = "debug_lines")]
-            debug_lines.line_colored(start, target, 0.0, Color::WHITE);
 
             let tangent = (target - start).normalize();
             let axis = (pole_target - start).cross(tangent);
@@ -80,11 +71,9 @@ impl IkConstraint {
                 target,
                 pole_target.as_ref(),
                 transforms,
-                #[cfg(feature = "debug_lines")]
-                debug_lines,
             )?;
 
-            if result.mul_vec3(normal).distance_squared(target) < 0.001 {
+            if result.transform_point(normal).distance_squared(target) < 0.001 {
                 return Ok(());
             }
         }
@@ -98,27 +87,8 @@ impl IkConstraint {
         target: Vec3,
         pole_target: Option<&PoleTarget>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
-        #[cfg(feature = "debug_lines")] debug_lines: &mut DebugLines,
     ) -> Result<GlobalTransform, QueryEntityError> {
         let (&transform, &global_transform) = transforms.get(chain[0])?;
-        #[cfg(feature = "debug_lines")]
-        {
-            let p = global_transform.translation();
-            debug_lines.line_colored(p, global_transform.mul_vec3(Vec3::X * 0.1), 0.0, Color::RED);
-            debug_lines.line_colored(
-                p,
-                global_transform.mul_vec3(Vec3::Y * 0.1),
-                0.0,
-                Color::GREEN,
-            );
-            debug_lines.line_colored(
-                p,
-                global_transform.mul_vec3(Vec3::Z * 0.1),
-                0.0,
-                Color::BLUE,
-            );
-            debug_lines.line_colored(p, global_transform.mul_vec3(normal), 0.0, Color::YELLOW);
-        }
 
         if chain.len() == 1 {
             return Ok(global_transform);
@@ -160,8 +130,6 @@ impl IkConstraint {
             translation,
             pole_target,
             transforms,
-            #[cfg(feature = "debug_lines")]
-            debug_lines,
         )?;
 
         // apply constraints on the way back from recursing
@@ -171,14 +139,6 @@ impl IkConstraint {
             .normalize()
             * rotation;
         *global_transform = parent_global_transform.mul_transform(*transform);
-
-        #[cfg(feature = "debug_lines")]
-        debug_lines.line_colored(
-            global_transform.translation(),
-            global_transform.mul_vec3(normal),
-            0.0,
-            Color::CYAN,
-        );
 
         Ok(*global_transform)
     }
