@@ -11,10 +11,11 @@ A [Bevy](https://github.com/bevyengine/bevy) plugin for inverse kinematics. Supp
 
 I intend to track the latest releases of Bevy.
 
-| bevy  | bevy_mod_inverse_kinematics |
-| ----- | --------------------------- |
-| 0.8.1 | 0.1                         |
-| 0.9.0 | 0.2                         |
+|  bevy  | bevy_mod_inverse_kinematics |
+| ------ | --------------------------- |
+|  0.8.1 | 0.1                         |
+|  0.9.0 | 0.2                         |
+| 0.10.0 | 0.3                         |
 
 ## Examples
 

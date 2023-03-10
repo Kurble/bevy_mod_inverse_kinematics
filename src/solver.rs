@@ -16,6 +16,10 @@ pub fn inverse_kinematics_system(
     mut transforms: Query<(&mut Transform, &mut GlobalTransform)>,
 ) {
     for (entity, constraint) in query.iter() {
+        if !constraint.enabled {
+            continue;
+        }
+
         if let Err(e) = constraint.solve(
             entity,
             &parents,

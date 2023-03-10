@@ -24,14 +24,15 @@ pub struct IkConstraint {
     /// If a pole target is set, the bone will roll toward the pole target.
     /// This angle is the offset to apply to the roll.
     pub pole_angle: f32,
+    /// Whether this constraint is enabled. Disabled constraints will be skipped.
+    pub enabled: bool,
 }
 
 impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_to_stage(
-            CoreStage::PostUpdate,
+        app.add_system(
             solver::inverse_kinematics_system
-                .after(bevy::transform::TransformSystem::TransformPropagate),
+                //.after(bevy::transform::TransformSystem::TransformPropagate),
         );
     }
 }

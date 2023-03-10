@@ -8,3 +8,6 @@
 # Version 0.2.0
 - Migrated to bevy 0.9
 - Removed debug_lines feature, to not have a third party bevy dependency.
+
+# Version 0.3.0
+- Migrated to bevy 0.10

@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 use bevy_mod_inverse_kinematics::*;
 
 #[derive(Component)]
@@ -7,11 +7,10 @@ pub struct ManuallyTarget(Vec4);
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                width: 800.0,
-                height: 600.0,
+            primary_window: Some(Window {
+                resolution: WindowResolution::new(800.0, 600.0),
                 ..default()
-            },
+            }),
             ..default()
         }))
         .add_plugin(InverseKinematicsPlugin)
@@ -43,21 +42,11 @@ fn setup(
             });
         });
 
-    let size = 30.0;
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
             illuminance: 10000.0,
             shadows_enabled: true,
-            shadow_projection: OrthographicProjection {
-                left: -size,
-                right: size,
-                bottom: -size,
-                top: size,
-                near: -size,
-                far: size,
-                ..default()
-            },
             ..default()
         },
         transform: Transform::from_xyz(-8.0, 8.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -65,7 +54,10 @@ fn setup(
     });
 
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+        mesh: meshes.add(Mesh::from(shape::Plane {
+            size: 5.0,
+            subdivisions: 0,
+        })),
         material: materials.add(StandardMaterial {
             base_color: Color::WHITE,
             ..default()
@@ -113,9 +105,10 @@ fn setup_ik(
             .spawn((
                 PbrBundle {
                     transform: Transform::from_xyz(0.3, 0.8, 0.2),
-                    mesh: meshes.add(Mesh::from(shape::Icosphere {
+                    mesh: meshes.add(Mesh::from(shape::UVSphere {
                         radius: 0.05,
-                        subdivisions: 1,
+                        sectors: 7,
+                        stacks: 7,
                     })),
                     material: materials.add(StandardMaterial {
                         base_color: Color::RED,
@@ -130,9 +123,10 @@ fn setup_ik(
         let pole_target = commands
             .spawn(PbrBundle {
                 transform: Transform::from_xyz(-1.0, 0.4, -0.2),
-                mesh: meshes.add(Mesh::from(shape::Icosphere {
+                mesh: meshes.add(Mesh::from(shape::UVSphere {
                     radius: 0.05,
-                    subdivisions: 1,
+                    sectors: 7,
+                    stacks: 7,
                 })),
                 material: materials.add(StandardMaterial {
                     base_color: Color::GREEN,
@@ -149,6 +143,7 @@ fn setup_ik(
             target,
             pole_target: Some(pole_target),
             pole_angle: -std::f32::consts::FRAC_PI_2,
+            enabled: true,
         });
     }
 }
