@@ -30,9 +30,6 @@ pub struct IkConstraint {
 
 impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(
-            solver::inverse_kinematics_system
-                //.after(bevy::transform::TransformSystem::TransformPropagate),
-        );
+        app.add_systems(Update, solver::inverse_kinematics_system);
     }
 }

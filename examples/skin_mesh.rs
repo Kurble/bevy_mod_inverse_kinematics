@@ -13,10 +13,9 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugin(InverseKinematicsPlugin)
-        .add_startup_system(setup)
-        .add_system(setup_ik)
-        .add_system(manually_target)
+        .add_plugins(InverseKinematicsPlugin)
+        .add_systems(Startup, setup)
+        .add_systems(Update, (setup_ik, manually_target))
         .run();
 }
 
@@ -188,16 +187,15 @@ fn manually_target(
 
     if let Some(event) = cursor.iter().last() {
         let view = transform.compute_matrix();
-        let (viewport_min, viewport_max) = camera.logical_viewport_rect().unwrap();
-        let screen_size = camera.logical_target_size().unwrap();
-        let viewport_size = viewport_max - viewport_min;
-        let adj_cursor_pos =
-            event.position - Vec2::new(viewport_min.x, screen_size.y - viewport_max.y);
+        let viewport_rect = camera.logical_viewport_rect().unwrap();
+        let viewport_size = viewport_rect.size();
+        let adj_cursor_pos = event.position - Vec2::new(viewport_rect.min.x, viewport_rect.min.y);
 
         let projection = camera.projection_matrix();
         let far_ndc = projection.project_point3(Vec3::NEG_Z).z;
         let near_ndc = projection.project_point3(Vec3::Z).z;
-        let cursor_ndc = (adj_cursor_pos / viewport_size) * 2.0 - Vec2::ONE;
+        let cursor_ndc =
+            ((adj_cursor_pos / viewport_size) * 2.0 - Vec2::ONE) * Vec2::new(1.0, -1.0);
         let ndc_to_world: Mat4 = view * projection.inverse();
         let near = ndc_to_world.project_point3(cursor_ndc.extend(near_ndc));
         let far = ndc_to_world.project_point3(cursor_ndc.extend(far_ndc));
