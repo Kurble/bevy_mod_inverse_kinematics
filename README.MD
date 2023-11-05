@@ -1,5 +1,5 @@
 # Inverse kinematics for Bevy
-  
+
 [![crates.io](https://img.shields.io/crates/v/bevy_mod_inverse_kinematics)](https://crates.io/crates/bevy_mod_inverse_kinematics)
 [![docs.rs](https://docs.rs/bevy_mod_inverse_kinematics/badge.svg)](https://docs.rs/bevy_mod_inverse_kinematics)
 
@@ -16,6 +16,8 @@ I intend to track the latest releases of Bevy.
 |  0.8.1 | 0.1                         |
 |  0.9.0 | 0.2                         |
 | 0.10.0 | 0.3                         |
+| 0.11.x | 0.4                         |
+| 0.12.x | 0.5                         |
 
 ## Examples
 

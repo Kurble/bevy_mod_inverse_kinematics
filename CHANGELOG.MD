@@ -14,3 +14,6 @@
 
 # Version 0.4.0
 - Migrated to bevy 0.11
+
+# Version 0.5.0
+- Migrated to beyv 0.12
