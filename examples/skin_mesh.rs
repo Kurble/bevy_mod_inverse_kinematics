@@ -53,10 +53,7 @@ fn setup(
     });
 
     commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane {
-            size: 5.0,
-            subdivisions: 0,
-        })),
+        mesh: meshes.add(Mesh::from(Plane3d::default().mesh().size(5.0, 5.0))),
         material: materials.add(StandardMaterial {
             base_color: Color::WHITE,
             ..default()
@@ -99,16 +96,11 @@ fn setup_ik(
             &names,
         )
         .unwrap();
-
         let target = commands
             .spawn((
                 PbrBundle {
                     transform: Transform::from_xyz(0.3, 0.8, 0.2),
-                    mesh: meshes.add(Mesh::from(shape::UVSphere {
-                        radius: 0.05,
-                        sectors: 7,
-                        stacks: 7,
-                    })),
+                    mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
                     material: materials.add(StandardMaterial {
                         base_color: Color::RED,
                         ..default()
@@ -122,11 +114,7 @@ fn setup_ik(
         let pole_target = commands
             .spawn(PbrBundle {
                 transform: Transform::from_xyz(-1.0, 0.4, -0.2),
-                mesh: meshes.add(Mesh::from(shape::UVSphere {
-                    radius: 0.05,
-                    sectors: 7,
-                    stacks: 7,
-                })),
+                mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
                 material: materials.add(StandardMaterial {
                     base_color: Color::GREEN,
                     ..default()
