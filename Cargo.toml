@@ -10,5 +10,5 @@ keywords = ["gamedev", "graphics", "bevy", "animation"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy = "0.13"
+bevy = "0.14"
 
