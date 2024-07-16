@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{prelude::*, window::WindowResolution, color::palettes::css};
 use bevy_mod_inverse_kinematics::*;
 
 #[derive(Component)]
@@ -43,7 +43,7 @@ fn setup(
 
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
-            color: Color::WHITE,
+            color: css::WHITE.into(),
             illuminance: 10000.0,
             shadows_enabled: true,
             ..default()
@@ -55,7 +55,7 @@ fn setup(
     commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Plane3d::default().mesh().size(5.0, 5.0))),
         material: materials.add(StandardMaterial {
-            base_color: Color::WHITE,
+            base_color: css::WHITE.into(),
             ..default()
         }),
         ..default()
@@ -80,17 +80,15 @@ fn setup_ik(
     for (entity, _parent) in added_query.iter() {
         // Try to get the entity for the right hand joint.
         let right_hand = find_entity(
-            &EntityPath {
-                parts: vec![
-                    "Pelvis".into(),
-                    "Spine1".into(),
-                    "Spine2".into(),
-                    "Collar.R".into(),
-                    "UpperArm.R".into(),
-                    "ForeArm.R".into(),
-                    "Hand.R".into(),
-                ],
-            },
+            &vec![
+                "Pelvis".into(),
+                "Spine1".into(),
+                "Spine2".into(),
+                "Collar.R".into(),
+                "UpperArm.R".into(),
+                "ForeArm.R".into(),
+                "Hand.R".into(),
+            ],
             entity,
             &children,
             &names,
@@ -102,7 +100,7 @@ fn setup_ik(
                     transform: Transform::from_xyz(0.3, 0.8, 0.2),
                     mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
                     material: materials.add(StandardMaterial {
-                        base_color: Color::RED,
+                        base_color: css::RED.into(),
                         ..default()
                     }),
                     ..default()
@@ -116,7 +114,7 @@ fn setup_ik(
                 transform: Transform::from_xyz(-1.0, 0.4, -0.2),
                 mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
                 material: materials.add(StandardMaterial {
-                    base_color: Color::GREEN,
+                    base_color: css::GREEN.into(),
                     ..default()
                 }),
                 ..default()
@@ -136,14 +134,14 @@ fn setup_ik(
 }
 
 fn find_entity(
-    path: &EntityPath,
+    path: &Vec<Name>,
     root: Entity,
     children: &Query<&Children>,
     names: &Query<&Name>,
 ) -> Result<Entity, ()> {
     let mut current_entity = root;
 
-    for part in path.parts.iter() {
+    for part in path.iter() {
         let mut found = false;
         if let Ok(children) = children.get(current_entity) {
             for child in children.iter() {
@@ -179,7 +177,7 @@ fn manually_target(
         let viewport_size = viewport_rect.size();
         let adj_cursor_pos = event.position - Vec2::new(viewport_rect.min.x, viewport_rect.min.y);
 
-        let projection = camera.projection_matrix();
+        let projection = camera.clip_from_view();
         let far_ndc = projection.project_point3(Vec3::NEG_Z).z;
         let near_ndc = projection.project_point3(Vec3::Z).z;
         let cursor_ndc =
