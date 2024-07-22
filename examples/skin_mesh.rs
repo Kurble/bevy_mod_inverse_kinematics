@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution, color::palettes::css};
+use bevy::{color::palettes::css, prelude::*, window::WindowResolution};
 use bevy_mod_inverse_kinematics::*;
 
 #[derive(Component)]
@@ -114,7 +114,7 @@ fn setup_ik(
                 transform: Transform::from_xyz(-1.0, 0.4, -0.2),
                 mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
                 material: materials.add(StandardMaterial {
-                    base_color: css::GREEN.into(),
+                    base_color: css::LIME.into(),
                     ..default()
                 }),
                 ..default()
