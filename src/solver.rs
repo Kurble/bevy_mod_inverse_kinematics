@@ -1,4 +1,4 @@
-use bevy::ecs::query::QueryEntityError;
+use bevy::ecs::world::error::EntityFetchError;
 use bevy::prelude::*;
 
 use super::IkConstraint;
@@ -20,11 +20,7 @@ pub fn inverse_kinematics_system(
             continue;
         }
 
-        if let Err(e) = constraint.solve(
-            entity,
-            &parents,
-            &mut transforms,
-        ) {
+        if let Err(e) = constraint.solve(entity, &parents, &mut transforms) {
             bevy::log::warn!("Failed to solve IK constraint: {e}");
         }
     }
@@ -36,7 +32,7 @@ impl IkConstraint {
         entity: Entity,
         parents: &Query<&Parent>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
-    ) -> Result<(), QueryEntityError> {
+    ) -> Result<(), EntityFetchError> {
         if self.chain_length == 0 {
             return Ok(());
         }
@@ -44,15 +40,19 @@ impl IkConstraint {
         let mut joints = Vec::with_capacity(self.chain_length + 2);
         joints.push(entity);
         for i in 0..self.chain_length + 1 {
-            joints.push(parents.get(joints[i])?.get());
+            joints.push(parents.get(joints[i]).unwrap().get());
         }
 
-        let target = transforms.get(self.target)?.1.translation();
-        let normal = transforms.get(joints[0])?.0.translation;
+        let target = transforms.get(self.target).unwrap().1.translation();
+        let normal = transforms.get(joints[0]).unwrap().0.translation;
 
         let pole_target = if let Some(pole_target) = self.pole_target {
-            let start = transforms.get(joints[self.chain_length])?.1.translation();
-            let pole_target = transforms.get(pole_target)?.1.translation();
+            let start = transforms
+                .get(joints[self.chain_length])
+                .unwrap()
+                .1
+                .translation();
+            let pole_target = transforms.get(pole_target).unwrap().1.translation();
 
             let tangent = (target - start).normalize();
             let axis = (pole_target - start).cross(tangent);
@@ -91,8 +91,8 @@ impl IkConstraint {
         target: Vec3,
         pole_target: Option<&PoleTarget>,
         transforms: &mut Query<(&mut Transform, &mut GlobalTransform)>,
-    ) -> Result<GlobalTransform, QueryEntityError> {
-        let (&transform, &global_transform) = transforms.get(chain[0])?;
+    ) -> Result<GlobalTransform, EntityFetchError> {
+        let (&transform, &global_transform) = transforms.get(chain[0]).unwrap();
 
         if chain.len() == 1 {
             return Ok(global_transform);

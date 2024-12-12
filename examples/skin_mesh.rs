@@ -25,47 +25,42 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands
-        .spawn(SpatialBundle::default())
-        .with_children(|parent| {
-            parent.spawn(Camera3dBundle {
-                transform: Transform::from_xyz(-0.5, 1.5, 2.5)
-                    .looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
-                projection: bevy::render::camera::Projection::Perspective(PerspectiveProjection {
-                    fov: std::f32::consts::FRAC_PI_4,
-                    aspect_ratio: 1.0,
-                    near: 0.1,
-                    far: 100.0,
-                }),
-                ..default()
-            });
-        });
+    commands.spawn((
+        Camera3d::default(),
+        Projection::Perspective(PerspectiveProjection {
+            fov: std::f32::consts::FRAC_PI_4,
+            aspect_ratio: 1.0,
+            near: 0.1,
+            far: 100.0,
+        }),
+        Transform::from_xyz(-0.5, 1.5, 2.5).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+    ));
 
-    commands.spawn(DirectionalLightBundle {
-        directional_light: DirectionalLight {
+    commands.spawn((
+        DirectionalLight {
             color: css::WHITE.into(),
             illuminance: 10000.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(-8.0, 8.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+        Transform::from_xyz(-8.0, 8.0, 8.0),
+    ));
 
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(Plane3d::default().mesh().size(5.0, 5.0))),
-        material: materials.add(StandardMaterial {
+    commands.spawn((
+        Mesh3d(meshes.add(Plane3d {
+            half_size: Vec2::new(2.5, 2.5),
+            ..default()
+        })),
+        MeshMaterial3d(materials.add(StandardMaterial {
             base_color: css::WHITE.into(),
             ..default()
-        }),
-        ..default()
-    });
+        })),
+    ));
 
-    commands.spawn(SceneBundle {
-        scene: assets.load("skin.gltf#Scene0"),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        ..default()
-    });
+    commands.spawn((
+        SceneRoot(assets.load(GltfAssetLabel::Scene(0).from_asset("skin.gltf#Scene0"))),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+    ));
 }
 
 fn setup_ik(
@@ -94,31 +89,27 @@ fn setup_ik(
             &names,
         )
         .unwrap();
+
         let target = commands
             .spawn((
-                PbrBundle {
-                    transform: Transform::from_xyz(0.3, 0.8, 0.2),
-                    mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
-                    material: materials.add(StandardMaterial {
-                        base_color: css::RED.into(),
-                        ..default()
-                    }),
+                Mesh3d(meshes.add(Sphere::new(0.05).mesh().uv(7, 7))),
+                MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: css::RED.into(),
                     ..default()
-                },
+                })),
                 ManuallyTarget(Vec4::new(0.0, 0.0, 1.0, 0.3)),
             ))
             .id();
 
         let pole_target = commands
-            .spawn(PbrBundle {
-                transform: Transform::from_xyz(-1.0, 0.4, -0.2),
-                mesh: meshes.add(Sphere::new(0.05).mesh().uv(7, 7)),
-                material: materials.add(StandardMaterial {
+            .spawn((
+                Mesh3d(meshes.add(Sphere::new(0.05).mesh().uv(7, 7))),
+                MeshMaterial3d(materials.add(StandardMaterial {
                     base_color: css::LIME.into(),
                     ..default()
-                }),
-                ..default()
-            })
+                })),
+                Transform::from_xyz(-1.0, 0.4, -0.2),
+            ))
             .id();
 
         // Add an IK constraint to the right hand, using the targets that were created earlier.
