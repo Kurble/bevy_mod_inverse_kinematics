@@ -67,12 +67,12 @@ fn setup_ik(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    added_query: Query<(Entity, &Parent), Added<AnimationPlayer>>,
+    added_query: Query<Entity, (Added<AnimationPlayer>, With<ChildOf>)>,
     children: Query<&Children>,
     names: Query<&Name>,
 ) {
     // Use the presence of `AnimationPlayer` to determine the root entity of the skeleton.
-    for (entity, _parent) in added_query.iter() {
+    for entity in added_query.iter() {
         // Try to get the entity for the right hand joint.
         let right_hand = find_entity(
             &vec![
@@ -136,10 +136,10 @@ fn find_entity(
         let mut found = false;
         if let Ok(children) = children.get(current_entity) {
             for child in children.iter() {
-                if let Ok(name) = names.get(*child) {
+                if let Ok(name) = names.get(child) {
                     if name == part {
                         // Found a children with the right name, continue to the next part
-                        current_entity = *child;
+                        current_entity = child;
                         found = true;
                         break;
                     }
@@ -156,11 +156,11 @@ fn find_entity(
 }
 
 fn manually_target(
-    camera_query: Query<(&Camera, &GlobalTransform)>,
+    camera_query: Single<(&Camera, &GlobalTransform)>,
     mut target_query: Query<(&ManuallyTarget, &mut Transform)>,
     mut cursor: EventReader<CursorMoved>,
 ) {
-    let (camera, transform) = camera_query.single();
+    let (camera, transform) = camera_query.into_inner();
 
     if let Some(event) = cursor.read().last() {
         let view = transform.compute_matrix();

@@ -21,6 +21,7 @@ I intend to track the latest releases of Bevy.
 | 0.13.x | 0.6                         |
 | 0.14.x | 0.7                         |
 | 0.15.x | 0.8                         |
+| 0.16.x | 0.9                         |
 
 ## Examples
 
