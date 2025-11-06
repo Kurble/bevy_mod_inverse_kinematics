@@ -16,4 +16,22 @@
 - Migrated to bevy 0.11
 
 # Version 0.5.0
-- Migrated to beyv 0.12
+- Migrated to bevy 0.12
+
+# Version 0.6.0
+- Migrated to bevy 0.13
+- Updated example to use new shapes
+- Removed `bevy_editor_pls` dependency
+
+# Version 0.7.0
+- Migrated to bevy 0.14
+
+# Version 0.8.0
+- Migrated to bevy 0.15
+- Added `Reflect` for `IkConstraints`
+
+# Version 0.9.0
+- Migrated to bevy 0.16
+
+# Version 0.10.0
+- Migrated to bevy 0.17
