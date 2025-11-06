@@ -10,7 +10,7 @@ keywords = ["gamedev", "graphics", "bevy", "animation"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-bevy = { version = "0.16", default-features = false, features = [ "bevy_log", "bevy_render" ] }
+bevy = { version = "0.17", default-features = false, features = [ "bevy_log", "bevy_render" ] }
 
 [dev-dependencies]
-bevy = "0.16"
+bevy = "0.17"
