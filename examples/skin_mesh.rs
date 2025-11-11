@@ -8,7 +8,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: WindowResolution::new(800.0, 600.0),
+                resolution: WindowResolution::new(800, 600),
                 ..default()
             }),
             ..default()
@@ -158,12 +158,12 @@ fn find_entity(
 fn manually_target(
     camera_query: Single<(&Camera, &GlobalTransform)>,
     mut target_query: Query<(&ManuallyTarget, &mut Transform)>,
-    mut cursor: EventReader<CursorMoved>,
+    mut cursor: MessageReader<CursorMoved>,
 ) {
     let (camera, transform) = camera_query.into_inner();
 
     if let Some(event) = cursor.read().last() {
-        let view = transform.compute_matrix();
+        let view = transform.to_matrix();
         let viewport_rect = camera.logical_viewport_rect().unwrap();
         let viewport_size = viewport_rect.size();
         let adj_cursor_pos = event.position - Vec2::new(viewport_rect.min.x, viewport_rect.min.y);
