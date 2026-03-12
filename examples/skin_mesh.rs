@@ -32,7 +32,7 @@ fn setup(
             aspect_ratio: 1.0,
             near: 0.1,
             far: 100.0,
-            ..Default::default()
+            ..default()
         }),
         Transform::from_xyz(-0.5, 1.5, 2.5).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
     ));
