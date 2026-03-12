@@ -9,7 +9,8 @@ pub struct InverseKinematicsPlugin;
 /// Inverse kintematics constraint to be added to the tail joint of
 /// a chain of bones. The solver will attempt to match the global translation of
 /// of this entity to that of the target.
-#[derive(Component, Reflect)]
+#[derive(Component, Reflect, Debug)]
+#[reflect(Component)]
 pub struct IkConstraint {
     /// How many bones are included in the IK constraint.
     pub chain_length: usize,
@@ -30,7 +31,7 @@ pub struct IkConstraint {
 
 impl Plugin for InverseKinematicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, solver::inverse_kinematics_system);
-        app.register_type::<IkConstraint>();
+        app.add_systems(Update, solver::inverse_kinematics_system)
+            .register_type::<IkConstraint>();
     }
 }
