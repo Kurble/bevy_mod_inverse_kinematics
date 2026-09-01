@@ -41,7 +41,7 @@ fn setup(
         DirectionalLight {
             color: css::WHITE.into(),
             illuminance: 10000.0,
-            shadows_enabled: true,
+            shadow_maps_enabled: true,
             ..default()
         },
         Transform::from_xyz(-8.0, 8.0, 8.0),
@@ -59,7 +59,7 @@ fn setup(
     ));
 
     commands.spawn((
-        SceneRoot(assets.load(GltfAssetLabel::Scene(0).from_asset("skin.gltf#Scene0"))),
+        WorldAssetRoot(assets.load(GltfAssetLabel::Scene(0).from_asset("skin.gltf#Scene0"))),
         Transform::from_xyz(0.0, 0.0, 0.0),
     ));
 }
