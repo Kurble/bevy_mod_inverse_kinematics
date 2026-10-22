@@ -38,3 +38,9 @@
 
 # Version 0.11.0
 - Migrated to bevy 0.18
+
+# Version 0.12.0
+- Migrated to bevy 0.19
+
+# Version 0.13.0
+- Migrated to bevy 0.20
